@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voice Changer Pro</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#14161a;--mut:#6b7280;--acc:#5b5bf0;--bd:#e3e5ea;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#181b21;--fg:#eceef2;--mut:#8b93a1;--bd:#282c35}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--fg:#eceef2;--mut:#8b93a1;--bd:#282c35}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;justify-content:center;padding:16px}
+.wrap{width:100%;max-width:460px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:18px}
+h1{font-size:20px;margin:0 0 2px}h2{font-size:13px;margin:0 0 12px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.sub{color:var(--mut);font-size:13px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.v,.b{padding:12px 4px;border:1px solid var(--bd);background:transparent;color:var(--fg);border-radius:12px;font-size:13px;cursor:pointer}
+.v.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:600}
+.v.n{grid-column:span 3;padding:9px}
+.s{display:grid;grid-template-columns:118px 1fr 40px;gap:8px;align-items:center;font-size:13px;margin:7px 0}
+.s span:last-child{color:var(--mut);text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%}
+select,input[type=text]{width:100%;padding:9px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg);font-size:14px}
+label.l{display:block;font-size:12px;color:var(--mut);margin:12px 0 5px}
+.go{width:100%;padding:14px;border:0;border-radius:12px;background:var(--acc);color:#fff;font-size:16px;font-weight:600;cursor:pointer}
+.go.live,.rec.live{background:#e5484d;color:#fff;border-color:#e5484d}
+.meter{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin:12px 0}
+.meter i{display:block;height:100%;width:0;background:var(--acc);transition:width .05s}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.rec{width:100%;padding:13px;border:1px solid var(--bd);border-radius:12px;background:transparent;color:var(--fg);font-size:15px;font-weight:600;cursor:pointer}
+.b:disabled{opacity:.4;cursor:default}
+.b.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);font-weight:600}
+.sb{padding:10px 2px;font-size:12px}
+.save{display:flex;gap:8px}.save .b{white-space:nowrap;padding:9px 14px}
+.my{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.my .v{padding:7px 10px;font-size:12px}
+.note{font-size:12px;color:var(--mut);line-height:1.5;margin:0}
+#msg{font-size:13px;color:#e5484d;min-height:16px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>🎙️ Voice Changer Pro</h1>
+    <p class="sub">Live mic → any voice. Tweak everything. Use headphones.</p>
+  </div>
+
+  <div class="card">
+    <h2>Voices</h2>
+    <div class="grid" id="presets"></div>
+    <div class="my" id="my"></div>
+  </div>
+
+  <div class="card">
+    <h2>Edit the sound</h2>
+    <div id="sliders"></div>
+    <label class="l">Save your tweak as a custom voice</label>
+    <div class="save"><input type="text" id="cname" placeholder="Name it, e.g. Sassy Aunt" maxlength="20"><button class="b" id="csave">Save</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Test it</h2>
+    <button class="rec" id="rec">● Record a test clip</button>
+    <div class="two"><button class="b" id="pa" disabled>▶ Original</button><button class="b" id="pb" disabled>▶ Changed</button></div>
+    <p class="note" id="rnote" style="margin-top:10px">Talk for a few seconds, stop, then compare your real voice against the changed one.</p>
+  </div>
+
+  <div class="card">
+    <h2>Background sound</h2>
+    <div class="grid" id="nbtns"></div>
+    <div id="nmix" style="margin-top:12px"></div>
+    <div class="s"><span>Master level</span><input type="range" id="nvol" min="0" max="100" value="60"><span></span></div>
+    <button class="b" id="nclr" style="width:100%;margin-top:4px">Clear all sounds</button>
+    <p class="note" style="margin-top:10px">Tap to turn sounds on. Layer as many as you want (car + rain + radio static) and set each one's level. Sounds go out with your voice and get recorded in test clips.</p>
+  </div>
+
+  <div class="card">
+    <h2>Live</h2>
+    <label class="l" style="margin-top:0">Input mic</label>
+    <select id="inSel"></select>
+    <label class="l">Output (pick your virtual cable for calls)</label>
+    <select id="outSel"><option value="">Default output</option></select>
+    <label class="chk"><input type="checkbox" id="mon"> Hear myself in my headphones</label>
+    <div class="meter"><i id="lvl"></i></div>
+    <button class="go" id="go">Start</button>
+    <div id="msg"></div>
+    <p class="note" style="margin-top:12px">For calls: install VB-Cable (Windows) or BlackHole (Mac), set Output above to it, then pick it as your mic in Zoom, Discord, etc. If mic access is blocked in this preview, open the page in its own tab.</p>
+    <p class="note" style="margin-top:8px">📲 <b>Use it like an app:</b> in Chrome open ⋮ → Cast, save, and share → <b>Install page as app</b> (or <b>Create shortcut</b> and tick <b>Open as window</b>). It then opens in its own window with its own icon, like Google Chat. Edge: ⋯ → Apps → Install this site as an app.</p>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S=[['p','Pitch',-0.6,0.7,0.01],['bass','Bass',-12,12,1],['mid','Voice presence',-12,12,1],['treb','Treble / air',-12,12,1],['vib','Pitch wobble',0,1,0.01],['rate','Wobble speed',0.5,9,0.1],['trem','Shakiness',0,1,0.01],['grav','Gravel / rasp',0,1,0.01],['breath','Breathiness',0,0.3,0.01]];
+const N={p:0,bass:0,mid:0,treb:0,vib:0,rate:5,trem:0,grav:0,breath:0};
+const P={
+'👧 Young Woman':{...N,p:.4,bass:-4,mid:2,treb:5},
+'👩 Woman':{...N,p:.3,bass:-5,mid:1,treb:3},
+'👵 Grandma':{...N,p:.28,bass:-5,mid:1,treb:0,vib:.4,rate:5.2,trem:.22,grav:.12,breath:.06},
+'👦 Young Man':{...N,p:-.12,bass:3},
+'🧔 Man':{...N,p:-.32,bass:6,treb:-3,grav:.05},
+'👴 Grandpa':{...N,p:-.27,bass:3,mid:-2,treb:-6,vib:.35,rate:4.4,trem:.18,grav:.4,breath:.04},
+'Normal (no effect)':N
+};
+let v={...N},ctx,stream,nodes={},running=false,raf,active='Normal (no effect)';
+
+// pitch shifter (delay-line crossfade)
+function fadeBuf(c,bt,ft){const l1=bt*c.sampleRate,l2=(bt-2*ft)*c.sampleRate,len=l1+l2,b=c.createBuffer(1,len,c.sampleRate),p=b.getChannelData(0),fl=ft*c.sampleRate,f2=l1-fl;for(let i=0;i<l1;i++)p[i]=i<fl?Math.sqrt(i/fl):i>=f2?Math.sqrt(1-(i-f2)/fl):1;return b}
+function delayBuf(c,bt,ft,up){const l1=bt*c.sampleRate,l2=(bt-2*ft)*c.sampleRate,len=l1+l2,b=c.createBuffer(1,len,c.sampleRate),p=b.getChannelData(0);for(let i=0;i<l1;i++)p[i]=up?(l1-i)/len:i/l1;return b}
+function makeShifter(c){
+  const bt=.1,ft=.05,dt=.1,input=c.createGain(),output=c.createGain();
+  const down=delayBuf(c,bt,ft,false),up=delayBuf(c,bt,ft,true),fb=fadeBuf(c,bt,ft);
+  const src=b=>{const s=c.createBufferSource();s.buffer=b;s.loop=true;return s};
+  const m1=src(down),m2=src(down),m3=src(up),m4=src(up),f1=src(fb),f2=src(fb);
+  const g1=c.createGain(),g2=c.createGain(),g3=c.createGain(),g4=c.createGain(),mg1=c.createGain(),mg2=c.createGain();
+  m1.connect(g1);m2.connect(g2);m3.connect(g3);m4.connect(g4);
+  g1.connect(mg1);g3.connect(mg1);g2.connect(mg2);g4.connect(mg2);
+  const d1=c.createDelay(),d2=c.createDelay(),x1=c.createGain(),x2=c.createGain();
+  d1.delayTime.value=0;d2.delayTime.value=0;mg1.connect(d1.delayTime);mg2.connect(d2.delayTime);
+  f1.connect(x1.gain);f2.connect(x2.gain);x1.gain.value=0;x2.gain.value=0;
+  input.connect(d1);input.connect(d2);d1.connect(x1);d2.connect(x2);x1.connect(output);x2.connect(output);
+  const t=c.currentTime+.05,t2=t+bt-ft;
+  m1.start(t);m2.start(t2);m3.start(t);m4.start(t2);f1.start(t);f2.start(t2);
+  return{input,output,set(m){const u=m>0;g1.gain.value=g2.gain.value=u?0:1;g3.gain.value=g4.gain.value=u?1:0;mg1.gain.value=mg2.gain.value=.5*dt*Math.abs(m)}};
+}
+function curve(k){const n=256,c=new Float32Array(n),a=k*6;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=a?x*(1+a)/(1+a*Math.abs(x)):x}return c}
+
+// UI
+const dec=s=>(String(s).split('.')[1]||'').length;
+$('sliders').innerHTML=S.map(s=>`<div class="s"><span>${s[1]}</span><input type="range" id="v_${s[0]}" min="${s[2]}" max="${s[3]}" step="${s[4]}"><span id="t_${s[0]}"></span></div>`).join('');
+S.forEach(s=>$('v_'+s[0]).oninput=e=>{v[s[0]]=+e.target.value;active='';mark();apply()});
+function mark(){document.querySelectorAll('.v').forEach(b=>b.classList.toggle('on',b.dataset.n===active))}
+function pick(n,o){active=n;v={...o};mark();apply()}
+function mkBtn(n,o,cls){const b=document.createElement('button');b.className='v '+(cls||'');b.textContent=n;b.dataset.n=n;b.onclick=()=>pick(n,o);return b}
+Object.entries(P).forEach(([n,o])=>$('presets').appendChild(mkBtn(n,o,n[0]==='N'?'n':'')));
+function loadC(){try{return JSON.parse(localStorage.getItem('vc_custom')||'{}')}catch(e){return{}}}
+function saveC(o){try{localStorage.setItem('vc_custom',JSON.stringify(o))}catch(e){}}
+function renderC(){
+  const c=loadC();$('my').innerHTML='';
+  Object.entries(c).forEach(([n,o])=>{
+    const w=document.createElement('span');w.style.display='inline-flex';w.style.gap='2px';
+    w.appendChild(mkBtn('⭐ '+n,o));
+    const x=document.createElement('button');x.className='v';x.textContent='✕';x.style.padding='7px 8px';x.onclick=()=>{const d=loadC();delete d[n];saveC(d);renderC()};
+    w.appendChild(x);$('my').appendChild(w);
+  });
+}
+$('csave').onclick=()=>{const n=$('cname').value.trim();if(!n)return;const c=loadC();c[n]={...v};saveC(c);$('cname').value='';renderC()};
+renderC();
+
+function apply(){
+  S.forEach(s=>{$('v_'+s[0]).value=v[s[0]];$('t_'+s[0]).textContent=(+v[s[0]]).toFixed(dec(s[4]))});
+  const n=nodes;if(!n.sh)return;
+  n.sh.set(v.p);n.low.gain.value=v.bass;n.midf.gain.value=v.mid;n.high.gain.value=v.treb;
+  n.lfo.frequency.value=v.rate;n.vg.gain.value=v.vib*.004;
+  n.tg.gain.value=v.trem/2;n.tone.gain.value=1-v.trem/2;
+  n.shaper.curve=curve(v.grav);n.nz.gain.value=v.breath;
+}
+pick('Normal (no effect)',N);
+
+// ===== background sounds (all synthesized live) =====
+let nbus,NB={},cur=null;const sel=new Map(),live={};
+function nbuf(t){if(NB[t])return NB[t];const n=ctx.sampleRate*4,bf=ctx.createBuffer(1,n,ctx.sampleRate),d=bf.getChannelData(0);let a=0,b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for(let i=0;i<n;i++){const w=Math.random()*2-1;
+    if(t==='white')d[i]=w*.5;
+    else if(t==='brown'){a=(a+.02*w)/1.02;d[i]=a*3.5}
+    else{b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898;d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11;b6=w*.115926}}
+  return NB[t]=bf}
+const gn=v=>{const g=ctx.createGain();g.gain.value=v;return g};
+const fl=(t,f,q=1)=>{const x=ctx.createBiquadFilter();x.type=t;x.frequency.value=f;x.Q.value=q;return x};
+function L(t,fs,g){const s=ctx.createBufferSource();s.buffer=nbuf(t);s.loop=true;s.start(0,Math.random()*3);cur.n.push(s);let p=s;fs.forEach(f=>{const x=fl(...f);p.connect(x);p=x});const o=gn(g);p.connect(o);o.connect(cur.o);return o}
+function lfo(r,d,par){const o=ctx.createOscillator(),g=gn(d);o.frequency.value=r;o.connect(g);g.connect(par);o.start();cur.n.push(o)}
+function every(a,b,f){const T=cur;(function go(){setTimeout(()=>{if(T.dead)return;cur=T;f();go()},(a+Math.random()*(b-a))*1000)})()}
+function tone(f,d,v,ty='sine',f2,at=0){const o=ctx.createOscillator(),g=gn(0),t=ctx.currentTime+at;o.type=ty;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.linearRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.linearRampToValueAtTime(0,t+d);o.connect(g);g.connect(cur.o);o.start(t);o.stop(t+d+.05);cur.n.push(o)}
+function burst(t,ft,f,d,v){const s=ctx.createBufferSource();s.buffer=nbuf(t);const x=fl(ft,f,1),g=gn(0),n=ctx.currentTime;g.gain.setValueAtTime(0,n);g.gain.linearRampToValueAtTime(v,n+Math.min(.01,d/3));g.gain.linearRampToValueAtTime(0,n+d);s.connect(x);x.connect(g);g.connect(cur.o);s.start(n,Math.random()*3,d+.05)}
+function babble(v){[300,500,800,1200,1800].forEach((f,i)=>{const g=L('pink',[['bandpass',f,1.2]],v);lfo(.7+i*.6+Math.random(),v*.6,g.gain)})}
+const SND={
+'🚗 Car driving':()=>{L('brown',[['lowpass',220]],1.5);L('pink',[['lowpass',900]],.2);const e=ctx.createOscillator(),ef=fl('lowpass',180),eg=gn(.06);e.type='sawtooth';e.frequency.value=58;e.connect(ef);ef.connect(eg);eg.connect(cur.o);e.start();cur.n.push(e);lfo(.2,5,e.frequency)},
+'🛣️ Highway':()=>{L('brown',[['lowpass',400]],1.3);const g=L('pink',[['bandpass',1200,.4]],.25);lfo(.25,.1,g.gain)},
+'🏙️ City street':()=>{L('brown',[['lowpass',300]],.9);L('pink',[['bandpass',800,.6]],.22);every(5,12,()=>tone(430,.35,.05,'sawtooth'))},
+'🚌 Train / bus':()=>{L('brown',[['lowpass',160]],1.5);const g=L('pink',[['lowpass',500]],.2);lfo(2.2,.08,g.gain);every(20,40,()=>{tone(880,.4,.05);tone(660,.6,.05)})},
+'🌧️ Rain':()=>{L('pink',[['highpass',700]],.35);L('white',[['highpass',5000]],.1);L('brown',[['lowpass',200]],.4)},
+'⛈️ Storm':()=>{SND['🌧️ Rain']();every(8,20,()=>burst('brown','lowpass',130,3,1.2))},
+'🌬️ Wind':()=>{const a=L('white',[['bandpass',500,1.5]],.5);lfo(.15,.25,a.gain);const b=L('white',[['bandpass',900,1.2]],.3);lfo(.23,.15,b.gain)},
+'🌊 Ocean':()=>{const g=L('pink',[['lowpass',700]],.5);lfo(.1,.4,g.gain);const h=L('white',[['highpass',3000]],.05);lfo(.1,.04,h.gain)},
+'🏢 Office':()=>{L('pink',[['lowpass',900]],.18);const g=L('pink',[['bandpass',500,.8]],.12);lfo(3.1,.06,g.gain);every(.1,.9,()=>burst('white','bandpass',3000,.03,.18));every(25,50,()=>tone(1400,.4,.03,'square'))},
+'🍽️ Restaurant':()=>{babble(.1);L('pink',[['lowpass',500]],.1);every(3,9,()=>burst('white','bandpass',5000,.06,.12))},
+'🎉 Party':()=>{babble(.16);every(.5,.5,()=>tone(60,.18,.45,'sine',40))},
+'🍳 Kitchen':()=>{L('pink',[['lowpass',400]],.1);const g=L('pink',[['highpass',3000]],.14);lfo(.7,.06,g.gain);every(4,10,()=>burst('white','bandpass',5500,.07,.15))},
+'📺 TV in back':()=>{babble(.09);const g=L('pink',[['bandpass',900,.5]],.05);lfo(4.5,.04,g.gain);every(15,30,()=>burst('pink','bandpass',800,2,.15))},
+'❄️ Fan / AC':()=>{L('brown',[['lowpass',500]],.9);L('pink',[['bandpass',2000,.7]],.07)},
+'✈️ Airport':()=>{babble(.06);L('brown',[['lowpass',200]],.8);every(25,45,()=>{tone(659,.5,.04);tone(523,.8,.04)})},
+'🏗️ Construction':()=>{L('brown',[['lowpass',300]],.5);L('pink',[['lowpass',700]],.1);every(1.5,4,()=>{burst('brown','lowpass',150,.15,.8);burst('white','bandpass',2500,.03,.25)})},
+'🐦 Birds':()=>{L('pink',[['bandpass',400,.5]],.04);every(.3,2.5,()=>{const f=2200+Math.random()*1500;tone(f,.1,.04,'sine',f*1.3);tone(f*1.1,.09,.03,'sine',f*1.4,.14)})},
+'🦗 Night crickets':()=>{L('pink',[['lowpass',300]],.05);[4200,4650].forEach((f,i)=>{const o=ctx.createOscillator(),g=gn(.015);o.frequency.value=f;o.connect(g);g.connect(cur.o);o.start();cur.n.push(o);lfo(11+i*3,.015,g.gain)})},
+'🐕 Dog barking':()=>{L('pink',[['lowpass',400]],.05);every(4,14,()=>{tone(350,.15,.08,'sawtooth',230);tone(340,.15,.08,'sawtooth',220,.25);tone(360,.15,.08,'sawtooth',230,.5)})},
+'🔥 Fireplace':()=>{L('pink',[['lowpass',300]],.15);every(.05,.4,()=>burst('white','highpass',2000,.012,.05+.3*Math.random()))},
+'🚨 Siren far away':()=>{L('pink',[['lowpass',500]],.05);every(20,45,()=>{for(let i=0;i<6;i++)tone(i%2?950:700,.5,.035,'sine',i%2?700:950,i*.5)})},
+'🏥 Hospital':()=>{L('pink',[['lowpass',600]],.08);every(1.1,1.1,()=>tone(1000,.1,.05))},
+'📻 Static / bad line':()=>{const g=L('white',[['highpass',1000]],.06);lfo(7,.04,g.gain);every(.5,4,()=>burst('white','highpass',500,.05,.3))}
+};
+function startSound(lv,name){if(!ctx||live[name]||!nbus)return;const o=gn(lv);o.connect(nbus);cur={o,n:[],dead:false};live[name]=cur;SND[name]()}
+function stopSound(name){const T=live[name];if(!T)return;T.dead=true;T.n.forEach(x=>{try{x.stop()}catch(e){}});try{T.o.disconnect()}catch(e){}delete live[name]}
+function stopAll(){Object.keys(live).forEach(stopSound);NB={}}
+function mix(){
+  const m=$('nmix');m.innerHTML='';
+  sel.forEach((lv,n)=>{
+    const r=document.createElement('div');r.className='s';
+    const a=document.createElement('span');a.textContent=n;
+    const i=document.createElement('input');i.type='range';i.min=0;i.max=1;i.step=.01;i.value=lv;
+    i.oninput=()=>{sel.set(n,+i.value);if(live[n])live[n].o.gain.value=+i.value};
+    r.append(a,i,document.createElement('span'));m.appendChild(r);
+  });
+}
+Object.keys(SND).forEach(n=>{
+  const b=document.createElement('button');b.className='b sb';b.textContent=n;
+  b.onclick=async()=>{
+    if(sel.has(n)){sel.delete(n);stopSound(n)}
+    else{sel.set(n,.6);if(!running)await start();else startSound(.6,n)}
+    b.classList.toggle('on',sel.has(n));mix();
+  };
+  $('nbtns').appendChild(b);
+});
+$('nvol').oninput=e=>{if(nbus)nbus.gain.value=e.target.value/100};
+$('nclr').onclick=()=>{[...sel.keys()].forEach(stopSound);sel.clear();document.querySelectorAll('.sb').forEach(b=>b.classList.remove('on'));mix()};
+
+$('mon').onchange=()=>{if(nodes.mon)nodes.mon.gain.value=$('mon').checked?1:0};
+$('inSel').onchange=()=>{if(running){stop();start()}};
+$('outSel').onchange=async()=>{if(nodes.audio&&nodes.audio.setSinkId){try{await nodes.audio.setSinkId($('outSel').value)}catch(e){$('msg').textContent='Output error: '+e.message}}};
+async function devices(){
+  try{
+    const d=await navigator.mediaDevices.enumerateDevices(),ci=$('inSel').value,co=$('outSel').value;
+    $('inSel').innerHTML=d.filter(x=>x.kind==='audioinput').map(x=>`<option value="${x.deviceId}">${x.label||'Microphone'}</option>`).join('');
+    $('outSel').innerHTML='<option value="">Default output</option>'+d.filter(x=>x.kind==='audiooutput').map(x=>`<option value="${x.deviceId}">${x.label||'Speaker'}</option>`).join('');
+    if(ci)$('inSel').value=ci;if(co)$('outSel').value=co;
+  }catch(e){}
+}
+devices();
+
+async function start(){
+  $('msg').textContent='';
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{deviceId:$('inSel').value?{exact:$('inSel').value}:undefined,echoCancellation:false,noiseSuppression:true,autoGainControl:false}})}
+  catch(e){$('msg').textContent='Mic blocked: '+e.message;return}
+  ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+  await ctx.resume();
+  const src=ctx.createMediaStreamSource(stream),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=80;
+  const sh=makeShifter(ctx);
+  const vd=ctx.createDelay();vd.delayTime.value=.006;
+  const lfo=ctx.createOscillator(),vg=ctx.createGain(),tg=ctx.createGain(),tone=ctx.createGain();
+  lfo.connect(vg);vg.connect(vd.delayTime);lfo.connect(tg);tg.connect(tone.gain);lfo.start();
+  const shaper=ctx.createWaveShaper();
+  const low=ctx.createBiquadFilter();low.type='lowshelf';low.frequency.value=200;
+  const midf=ctx.createBiquadFilter();midf.type='peaking';midf.frequency.value=1800;midf.Q.value=.8;
+  const high=ctx.createBiquadFilter();high.type='highshelf';high.frequency.value=3500;
+  const out=ctx.createGain();out.gain.value=1.2;
+  const nb=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+  const ns=ctx.createBufferSource();ns.buffer=nb;ns.loop=true;ns.start();
+  const nf=ctx.createBiquadFilter();nf.type='highpass';nf.frequency.value=2500;const nz=ctx.createGain();
+  ns.connect(nf);nf.connect(nz);nz.connect(out);
+  src.connect(hp);hp.connect(sh.input);sh.output.connect(vd);vd.connect(tone);tone.connect(shaper);
+  shaper.connect(low);low.connect(midf);midf.connect(high);high.connect(out);
+  const dest=ctx.createMediaStreamDestination(),mon=ctx.createGain(),an=ctx.createAnalyser();an.fftSize=256;
+  mon.gain.value=$('mon').checked?1:0;
+  out.connect(dest);out.connect(an);out.connect(mon);mon.connect(ctx.destination);
+  NB={};nbus=ctx.createGain();nbus.gain.value=$('nvol').value/100;nbus.connect(out);sel.forEach((lv,n)=>startSound(lv,n));
+  const audio=new Audio();audio.srcObject=dest.stream;
+  if(audio.setSinkId&&$('outSel').value){try{await audio.setSinkId($('outSel').value)}catch(e){$('msg').textContent='Output error: '+e.message}}
+  audio.play().catch(()=>{});
+  nodes={sh,low,midf,high,lfo,vg,tg,tone,shaper,nz,mon,audio,dest};
+  running=true;apply();$('go').textContent='Stop';$('go').classList.add('live');
+  await devices();
+  const buf=new Uint8Array(an.frequencyBinCount);
+  (function tick(){an.getByteTimeDomainData(buf);let m=0;for(const x of buf)m=Math.max(m,Math.abs(x-128));$('lvl').style.width=Math.min(100,m/128*160)+'%';raf=requestAnimationFrame(tick)})();
+}
+function stop(){
+  if(rec.on)stopRec();
+  cancelAnimationFrame(raf);
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+  if(nodes.audio){nodes.audio.pause();nodes.audio.srcObject=null}
+  stopAll();if(ctx)ctx.close();
+  nodes={};running=false;$('lvl').style.width='0';$('go').textContent='Start';$('go').classList.remove('live');
+}
+$('go').onclick=()=>running?stop():start();
+
+// test recorder
+let rec={on:false};
+function mk(s,key){const ch=[],r=new MediaRecorder(s);r.ondataavailable=e=>e.data.size&&ch.push(e.data);r.onstop=()=>{rec[key]=URL.createObjectURL(new Blob(ch,{type:r.mimeType||'audio/webm'}));if(rec.a&&rec.b&&!rec.on){$('pa').disabled=$('pb').disabled=false;$('rnote').textContent='Compare them. Change sliders and record again to A/B different voices.'}};r.start();return r}
+async function toggleRec(){
+  if(rec.on){stopRec();return}
+  if(!running)await start();
+  if(!running)return;
+  if(typeof MediaRecorder==='undefined'){$('rnote').textContent='Recording is not supported in this browser.';return}
+  rec.a=rec.b=null;$('pa').disabled=$('pb').disabled=true;
+  rec.ra=mk(stream,'a');rec.rb=mk(nodes.dest.stream,'b');rec.on=true;rec.t=0;
+  $('rec').textContent='■ Stop (0s)';$('rec').classList.add('live');
+  rec.iv=setInterval(()=>{rec.t++;$('rec').textContent='■ Stop ('+rec.t+'s)';if(rec.t>=20)stopRec()},1000);
+}
+function stopRec(){
+  clearInterval(rec.iv);rec.on=false;
+  try{rec.ra.stop();rec.rb.stop()}catch(e){}
+  $('rec').textContent='● Record a test clip';$('rec').classList.remove('live');
+}
+function play(k){if(rec.p)rec.p.pause();if(!rec[k])return;rec.p=new Audio(rec[k]);rec.p.play()}
+$('rec').onclick=toggleRec;$('pa').onclick=()=>play('a');$('pb').onclick=()=>play('b');
+</script>
+</body>
+</html>
